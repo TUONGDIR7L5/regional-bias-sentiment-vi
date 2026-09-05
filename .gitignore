@@ -1,0 +1,24 @@
+# ==== Dữ liệu & checkpoint nặng: KHÔNG đẩy lên git ====
+data/raw/
+data/interim/
+data/processed/
+data/annotations/
+results/*.ckpt
+results/*.pt
+results/*.bin
+*.pth
+
+# ==== Môi trường Python ====
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# ==== IDE / hệ điều hành ====
+.vscode/
+.idea/
+.DS_Store
+
+# ==== Jupyter checkpoints ====
+.ipynb_checkpoints/
