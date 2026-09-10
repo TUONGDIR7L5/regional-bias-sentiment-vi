@@ -29,8 +29,6 @@ results/        kết quả số liệu (metrics, log) theo từng nhóm model
 tests/          unit test
 ```
 
-Giải thích chi tiết từng thư mục con: xem comment trong `configs/*.yaml` và docstring đầu mỗi file trong `src/`.
-
 ## Cài đặt
 
 ```bash
