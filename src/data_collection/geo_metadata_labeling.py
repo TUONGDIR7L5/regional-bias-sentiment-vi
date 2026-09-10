@@ -3,18 +3,30 @@ import unicodedata
 
 REGION_LEXICON = {
     "northern": [
-        "giời", "u ơi", "bu ơi", "chả biết", "chúng mày", "đấy nhở", "nhỉ",
-        "cơ mà", "thế cơ đấy", "vãi", "ối giời ơi",
+        "giời", "ối giời ơi", "u ơi", "bu ơi", "thầy u", "chả biết", "chả có", "chả là",
+        "đấy nhở", "cơ mà", "thế cơ đấy", "cơ đấy", "giả nhời", "vưỡn", "nhở",
+        "mà lị", "chứ lị", "đằng ấy", "hay phết", "giỏi phết", "đẹp phết", "ra phết",
     ],
     "central": [
-        "mô", "tê", "răng", "rứa", "chi rứa", "nớ", "hè", "ni", "mần",
-        "trốc", "nác", "tề", "chừ", "ri", "hí", "mụ", "dừ",
+        "chi rứa hè", "chi rứa", "chi mô", "mần chi", "răng rứa", "răng ri", "mần răng",
+        "đi mô rứa", "ở mô rứa", "mô rồi", "răng rồi", "rứa hè", "rứa hầy", "nớ hè", "ri hè",
+        "rứa", "nớ", "ni", "mần", "trốc", "nác", "tề", "chừ", "hầy",
+        "choa", "bọn choa", "mệ", "nờ", "nỏ", "gấy", "nẫu", "túi ni", "hí",
     ],
     "southern": [
-        "hổng", "nghen", "dữ", "hông", "má ơi", "trời đất", "dạ hen",
-        "hen", "mắc", "tui", "hôn", "chèn ơi", "quá trời", "dữ hông",
-        "à nghen", "nè",
+        "hổng", "hông dzậy", "hông", "nghen", "à nghen", "dạ hen", "hen",
+        "má ơi", "trời đất ơi", "chèn ơi", "mèn ơi", "quá trời", "dữ hông", "dữ vậy", "dữ dzậy",
+        "tui", "dìa", "dzậy", "dzô", "biết chớ", "chớ bộ", "đây nè", "bây giờ nè", "nè",
+        "nói dzậy", "quơ", "trỏng", "quẹo", "được hôn", "vậy hôn", "hôn ta", "mắc quá", "mắc dữ",
     ],
+}
+
+AMBIGUOUS_CONTEXT_BLACKLIST = {
+    "ni": ["ni cô", "ni sư", "ni-lông", "nilon"],
+    "tề": ["chỉnh tề"],
+    "nỏ": ["cây nỏ", "bắn nỏ", "mũi tên nỏ"],
+    "hí": ["hí hửng", "hí hoáy", "hí hí"],
+    "nè": [],
 }
 
 
@@ -30,7 +42,6 @@ def _compile_patterns(lexicon):
 REGION_PATTERNS = _compile_patterns(REGION_LEXICON)
 
 GEO_PROVINCE_MAP = {
-    # Bac Bo
     "hà nội": "northern", "hải phòng": "northern", "bắc ninh": "northern",
     "nam định": "northern", "thái bình": "northern", "ninh bình": "northern",
     "hải dương": "northern", "hưng yên": "northern", "vĩnh phúc": "northern",
@@ -40,7 +51,6 @@ GEO_PROVINCE_MAP = {
     "lạng sơn": "northern", "cao bằng": "northern", "tuyên quang": "northern",
     "hà giang": "northern", "bắc kạn": "northern", "lai châu": "northern",
 
-    # Bac Trung Bo & Nam Trung Bo & Tay Nguyen
     "thanh hóa": "central", "nghệ an": "central", "hà tĩnh": "central",
     "quảng bình": "central", "quảng trị": "central", "huế": "central",
     "thừa thiên huế": "central", "đà nẵng": "central", "quảng nam": "central",
@@ -49,7 +59,6 @@ GEO_PROVINCE_MAP = {
     "đắk lắk": "central", "đắk nông": "central", "ninh thuận": "central",
     "bình thuận": "central", "lâm đồng": "central",
 
-    # Nam Bo
     "tp hcm": "southern", "hồ chí minh": "southern", "sài gòn": "southern",
     "bà rịa": "southern", "vũng tàu": "southern", "đồng nai": "southern",
     "bình dương": "southern", "bình phước": "southern", "tây ninh": "southern",
@@ -75,8 +84,25 @@ def geo_lookup_region(location):
     return None
 
 
+def _is_blacklisted(text_lower, matched_word):
+    blocked_phrases = AMBIGUOUS_CONTEXT_BLACKLIST.get(matched_word.lower(), [])
+    return any(phrase in text_lower for phrase in blocked_phrases)
+
+
+def get_dialect_features(text):
+    if not text:
+        return {}
+    text_lower = text.lower()
+    features = {}
+    for region, pattern in REGION_PATTERNS.items():
+        matches = pattern.findall(text)
+        features[region] = [m for m in matches if not _is_blacklisted(text_lower, m)]
+    return features
+
+
 def lexicon_lookup_region(text):
-    scores = {region: len(pattern.findall(text)) for region, pattern in REGION_PATTERNS.items()}
+    features = get_dialect_features(text)
+    scores = {region: len(words) for region, words in features.items()}
     nonzero = {r: s for r, s in scores.items() if s > 0}
     if not nonzero:
         return None, scores
@@ -93,7 +119,7 @@ def assign_region(text, location=None):
     if lex_region is not None:
         return {"region": lex_region, "label_source": "lexicon", "confidence": "medium", "match_scores": scores}
 
-    return {"region": "northern", "label_source": "fallback_default", "confidence": "low", "match_scores": scores}
+    return {"region": None, "label_source": "unmatched", "confidence": "none", "match_scores": scores}
 
 
 if __name__ == "__main__":
@@ -101,7 +127,9 @@ if __name__ == "__main__":
         ("Mi đi mô rứa hè?", None),
         ("Tui hổng biết nghen, dữ vậy trời!", None),
         ("Hôm nay trời đẹp ghê, đi chơi không?", "Sài Gòn"),
-        ("Bài viết này chất lượng đấy nhỉ.", None),
+        ("Mô típ giống vài bạn ai đồ tóp tóp", None),
+        ("Bán cà phê vỉa hè mà bận đồ đó chẳng lịch sự chút nào", None),
+        ("Sao bịt khẩu trang qoài z mở ra cái răng hô mưa không dột kk", None),
     ]
     for text, loc in demo_samples:
         result = assign_region(text, location=loc)

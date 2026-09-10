@@ -1,8 +1,4 @@
 # ==== Dữ liệu & checkpoint nặng: KHÔNG đẩy lên git ====
-data/raw/
-data/interim/
-data/processed/
-data/annotations/
 results/*.ckpt
 results/*.pt
 results/*.bin

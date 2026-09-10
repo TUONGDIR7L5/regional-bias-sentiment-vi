@@ -1,0 +1,32 @@
+# Xử lý dữ liệu
+pandas
+numpy
+pyyaml
+
+# NLP / model
+torch
+transformers
+scikit-learn
+
+# Đo độ đồng thuận annotator
+statsmodels
+
+# Kiểm định thống kê
+scipy
+
+# Notebook
+jupyter
+ipykernel
+
+# Crawl dữ liệu
+requests
+
+# Sinh dữ liệu tự động (Gemini)
+google-genai
+
+# Trực quan hóa
+matplotlib
+seaborn
+
+# Dashboard
+streamlit
